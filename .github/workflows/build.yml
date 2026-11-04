@@ -17,8 +17,16 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 7.6.4
-      - run: gradle assembleDebug --no-daemon
+      - name: Compilar
         working-directory: Coolwalk
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --console=plain 2>&1 | tee ../build.log
+      - name: Mostrar errores
+        if: failure()
+        run: |
+          grep -E "^e: " build.log | head -6 | sed 's#file:///home/runner/work/[^/]*/[^/]*/##' | while IFS= read -r l; do echo "::error::$l"; done
+          grep -A4 "What went wrong" build.log | head -4 | while IFS= read -r l; do echo "::error::$l"; done
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ultima
